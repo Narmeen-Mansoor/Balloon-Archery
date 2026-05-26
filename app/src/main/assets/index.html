@@ -453,6 +453,69 @@
             font-size: 16px;
             border-radius: 16px;
         }
+
+        /* Highly responsive mobile screen optimizations to guarantee zero scrolling */
+        @media (max-width: 600px) or (max-height: 600px) {
+            .overlay {
+                padding: 16px 12px;
+                justify-content: space-around;
+            }
+            #startScreen h1 {
+                font-size: clamp(20px, 5.5vw, 28px);
+                margin-bottom: 2px;
+            }
+            #startScreen .subtitle {
+                font-size: clamp(10px, 3vw, 12px);
+                margin-bottom: 4px;
+            }
+            .instructions-card {
+                padding: 10px 14px;
+                margin: 4px 0;
+                max-width: 100%;
+                border-radius: 14px;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            }
+            .instructions-card h2 {
+                font-size: 11px;
+                margin-bottom: 4px;
+            }
+            .instructions-list {
+                gap: 4px;
+                font-size: clamp(10px, 2.8vw, 12px);
+            }
+            .instructions-list li {
+                gap: 6px;
+                line-height: 1.25;
+            }
+            .btn-orange {
+                padding: 10px 24px;
+                font-size: 14px;
+                border-radius: 12px;
+                min-height: 44px;
+                width: 90%;
+                max-width: 260px;
+                margin-bottom: 4px;
+            }
+            .subtitle-cleared, .subtitle-gameover {
+                font-size: 11px;
+                margin-bottom: 8px;
+            }
+            .score-summary {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+            .score-summary .score-big {
+                font-size: 26px;
+            }
+            .btn-green, .btn-red {
+                padding: 10px 24px;
+                font-size: 14px;
+                border-radius: 12px;
+                min-height: 44px;
+                width: 90%;
+                max-width: 260px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -916,7 +979,7 @@
             const minX = 180;
             const maxX = 760;
             const x = minX + Math.random() * (maxX - minX);
-            const y = canvas.height + radius + 10;
+            const y = 600 + radius + 10; // Use logical height 600 instead of physical canvas.height to fix delay
 
             balloons.push({
                 x: x,
@@ -998,6 +1061,9 @@
             gameOverScreen.classList.add("hidden");
             hudBar.classList.remove("hidden");
 
+            // Instantly spawn the first balloon on game start
+            spawnBalloon();
+
             updateHUD();
         }
 
@@ -1019,6 +1085,10 @@
             levelBannerTimer = 180; // banner trigger
 
             clearedScreen.classList.add("hidden");
+
+            // Instantly spawn the first balloon on level advance
+            spawnBalloon();
+
             updateHUD();
         }
 
@@ -1120,9 +1190,17 @@
 
             // Only run balloon spawning, weaving, arrows and collision checks when game is actively PLAYING
             if (gameState === "PLAYING") {
-                // 1. Spawning balloons timer
+                // 1. Spawning balloons timer with dynamic spawn interval logic (steady flow of targets)
                 balloonSpawnTimer++;
-                if (balloonSpawnTimer >= balloonSpawnInterval) {
+                
+                let dynamicInterval = balloonSpawnInterval;
+                if (balloons.length === 0) {
+                    dynamicInterval = Math.min(25, balloonSpawnInterval / 3.5); // Spawn quicker if screen is empty
+                } else if (balloons.length === 1) {
+                    dynamicInterval = Math.min(45, balloonSpawnInterval / 2); // Keep steady targets
+                }
+
+                if (balloonSpawnTimer >= dynamicInterval) {
                     spawnBalloon();
                     balloonSpawnTimer = 0;
                 }
@@ -1151,8 +1229,8 @@
                     a.x += a.vx;
                     a.y += a.vy;
 
-                    // Collision with boundaries
-                    if (a.x > canvas.width + 50 || a.y < -50 || a.y > canvas.height + 50) {
+                    // Collision with boundaries using correct logical coordinate values (800x600)
+                    if (a.x > 800 + 30 || a.y < -30 || a.y > 600 + 30) {
                         // Arrow misses entirely penalty
                         if (!a.hasHit) {
                             lives--;
@@ -1221,7 +1299,8 @@
                 p.vy += p.isConfetti ? 0.08 : 0.12; // light gravity for confetti
                 p.opacity -= p.decay;
 
-                if (p.opacity <= 0) {
+                // Speed optimization: remove immediately if opacity faded or off-screen (with margin)
+                if (p.opacity <= 0 || p.y > 630 || p.x < -30 || p.x > 830 || p.y < -30) {
                     particles.splice(i, 1);
                 }
             }
@@ -1240,37 +1319,49 @@
 
         // Draw HUD inside canvas (fallback and decoration)
         function drawBackground() {
-            // Elegant linear background for sky based on Level theme - Sunset / Twilight themes
+            // Shifting linear backgrounds based on Level theme
             const skyGrad = ctx.createLinearGradient(0, 0, 0, 600);
             
-            if (currentLevel === 1) {
-                // Vibrant Sunny Day
-                skyGrad.addColorStop(0, '#0284c7'); // sky-600
-                skyGrad.addColorStop(0.5, '#38bdf8'); // sky-450
-                skyGrad.addColorStop(0.85, '#bae6fd'); // sky-200
-                skyGrad.addColorStop(1, '#fef08a'); // golden warm horizon yellow
-            } else if (currentLevel % 3 === 0) {
-                // Vivid Sunset Skylines
-                skyGrad.addColorStop(0, '#1e1b4b'); // deep indigo
-                skyGrad.addColorStop(0.4, '#4c1d95'); // royal purple
-                skyGrad.addColorStop(0.75, '#be185d'); // magenta pink
-                skyGrad.addColorStop(1, '#ffedd5'); // peach orange glow
-            } else if (currentLevel % 3 === 1) {
-                // Rich Teal Horizon
-                skyGrad.addColorStop(0, '#0f172a'); // midnight slate
-                skyGrad.addColorStop(0.42, '#0d9488'); // teal-600
-                skyGrad.addColorStop(0.8, '#4fd1c5'); // teal-400
-                skyGrad.addColorStop(1, '#f0fdfa'); // mint teal
+            if (currentLevel <= 3) {
+                // Levels 1-3: Early Evening (Soft purple/violet top to warm orange horizon)
+                skyGrad.addColorStop(0, '#3b1d5c'); // Soft purple/violet
+                skyGrad.addColorStop(0.42, '#5c2275'); // Rich purple
+                skyGrad.addColorStop(0.82, '#c2410c'); // Warm deep orange
+                skyGrad.addColorStop(1, '#ea580c'); // Horizon evening sun glow
+            } else if (currentLevel <= 7) {
+                // Levels 4-7: Late Twilight (Dark royal blue top to deep magenta/pink horizon)
+                skyGrad.addColorStop(0, '#020617'); // Dark royal blue
+                skyGrad.addColorStop(0.45, '#1e1b4b'); // Deep indigo
+                skyGrad.addColorStop(0.85, '#be185d'); // Bright magenta
+                skyGrad.addColorStop(1, '#db2777'); // Deep magenta/pink horizon
             } else {
-                // Midnight Cosmic Sky
-                skyGrad.addColorStop(0, '#030008');
-                skyGrad.addColorStop(0.5, '#0c071d');
-                skyGrad.addColorStop(0.8, '#4f1454');
-                skyGrad.addColorStop(1, '#f472b6'); // pink neon aura
+                // Levels 8-10+: Night Sky (Deep midnight blue to near-black gradient)
+                skyGrad.addColorStop(0, '#02040a'); // Near-black top
+                skyGrad.addColorStop(0.5, '#050b1e'); // Midnight blue
+                skyGrad.addColorStop(1, '#0b132b'); // Dark slate horizon
             }
             
             ctx.fillStyle = skyGrad;
             ctx.fillRect(0, 0, 800, 600);
+
+            // If Levels 8-10+, draw procedurally-computed stateless twinkling stars
+            if (currentLevel >= 8) {
+                ctx.save();
+                for (let i = 0; i < 45; i++) {
+                    const x = (Math.sin(i * 123.456 + 789.1) * 0.5 + 0.5) * 800;
+                    const y = (Math.cos(i * 654.321 + 123.4) * 0.5 + 0.5) * 450; // Keep in upper sky
+                    const size = (Math.sin(i * 987.654) * 0.5 + 0.5) * 1.5 + 0.6; // 0.6px to 2.1px diameter
+                    
+                    // twinkle pulse using sine mapping on Date.now()
+                    const twinkle = Math.sin((Date.now() / 450) + i) * 0.45 + 0.55; 
+                    
+                    ctx.fillStyle = `rgba(255, 255, 255, ${twinkle})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
 
             // Draw soft floating clouds under background gradient
             ctx.fillStyle = "rgba(255, 255, 255, 1)";
@@ -1322,9 +1413,6 @@
             ctx.rotate(bowAngle);
 
             // 1. Sleek wooden composite bow limbs back arc with active outer neon cyan/pink Guides
-            ctx.shadowColor = "#ec4899";
-            ctx.shadowBlur = 10;
-
             // Base wood structure
             ctx.beginPath();
             ctx.lineWidth = 6;
@@ -1347,14 +1435,10 @@
             ctx.arc(-24, 0, 49, -Math.PI / 3, Math.PI / 3);
             ctx.stroke();
 
-            ctx.shadowBlur = 0; // Clear shadow blurring for other steps
-
             // 2. High tension silver metallic laser string wire
             ctx.beginPath();
             ctx.lineWidth = 1.8;
             ctx.strokeStyle = "#ffffff";
-            ctx.shadowColor = "#38bdf8";
-            ctx.shadowBlur = 8;
             
             // Bow tips are situated around geometry coordinates
             const stringTopX = -24;
@@ -1365,8 +1449,6 @@
             ctx.moveTo(stringTopX, stringTopY);
             ctx.lineTo(stringBottomX, stringBottomY);
             ctx.stroke();
-
-            ctx.shadowBlur = 0;
 
             // 3. Aim visual arrow rests resting in bow ready state
             if (gameState === "PLAYING") {
@@ -1684,17 +1766,16 @@
 
         // Handle canvas auto-resizing with high DPI backing stores
         function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            // Establish crisp 800x600 logical bounds physical backing multiplier
+            // Clamp devicePixelRatio to 2 to optimize rendering speed on high-density displays (e.g. 3x or 4x screens)
+            const dpr = Math.min(2, window.devicePixelRatio || 1);
             canvas.width = 800 * dpr;
             canvas.height = 600 * dpr;
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
         }
 
-        // Main game cycle draw loop
-        function mainLoop() {
-            update();
-
-            const dpr = window.devicePixelRatio || 1;
+        function render() {
+            const dpr = Math.min(2, window.devicePixelRatio || 1);
 
             // Clear Screen on physical backing pixels
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1723,7 +1804,19 @@
             drawVFX();
 
             ctx.restore();
+        }
 
+        // Main game cycle draw loop with capped FPS (~60 FPS) to prevent physics acceleration on high refresh rate mobile screens
+        let lastTime = 0;
+        function mainLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const delta = timestamp - lastTime;
+
+            if (delta >= 16.5) { // Limit to roughly 60 FPS update ticks
+                lastTime = timestamp - (delta % 16.67);
+                update();
+                render();
+            }
             requestAnimationFrame(mainLoop);
         }
 
