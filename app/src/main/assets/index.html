@@ -315,6 +315,74 @@
             text-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);
         }
 
+        .overlay.level-intro {
+            background: rgba(15, 23, 42, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 32px 24px;
+            text-align: center;
+            z-index: 30;
+            color: #ffffff;
+            gap: 20px;
+        }
+
+        .overlay.level-intro h1 {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            font-size: clamp(22px, 5.5vw, 36px);
+            font-weight: 950;
+            letter-spacing: -1px;
+            margin: 0;
+            text-shadow: 0 4px 16px rgba(251, 191, 36, 0.4);
+        }
+
+        .intro-subtitle {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-size: clamp(12px, 3.5vw, 16px);
+            color: #cbd5e1;
+            max-width: 500px;
+            margin: 0;
+            line-height: 1.5;
+            font-weight: 600;
+        }
+
+        .intro-divider {
+            width: 140px;
+            height: 4px;
+            background-color: #fbbf24;
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+        }
+
+        .intro-extra {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-size: clamp(11px, 3.2vw, 13px);
+            font-weight: 700;
+            margin: 0;
+            max-width: 480px;
+            line-height: 1.4;
+        }
+
+        .intro-get-ready {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #ffffff;
+            opacity: 0.8;
+            margin-top: 12px;
+        }
+
+        .pulsing {
+            animation: pulse-anim 1s infinite alternate;
+        }
+
+        @keyframes pulse-anim {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+
         .subtitle-cleared, .subtitle-gameover {
             font-size: 14px;
             color: #94a3b8;
@@ -567,6 +635,17 @@
         <canvas id="gameCanvas" width="800" height="600"></canvas>
 
         <!-- Screens Overlays -->
+        <!-- Level Transition Splash Screen Overlay -->
+        <div id="levelIntroScreen" class="overlay level-intro hidden">
+            <div class="overlay-header">
+                <h1 id="introTitle">Level 1: Warm-Up Round</h1>
+                <p id="introSubtitle" class="intro-subtitle">Noticeably slow, gentle pace for orientation</p>
+            </div>
+            <div id="introDivider" class="intro-divider"></div>
+            <div id="introExtraMsg" class="intro-extra"></div>
+            <div class="intro-get-ready pulsing">GET READY</div>
+        </div>
+
         <!-- Start Screen -->
         <div id="startScreen" class="overlay">
             <div class="overlay-header">
@@ -771,6 +850,11 @@
         const startScreen = document.getElementById("startScreen");
         const clearedScreen = document.getElementById("clearedScreen");
         const gameOverScreen = document.getElementById("gameOverScreen");
+        const levelIntroScreen = document.getElementById("levelIntroScreen");
+        const introTitle = document.getElementById("introTitle");
+        const introSubtitle = document.getElementById("introSubtitle");
+        const introDivider = document.getElementById("introDivider");
+        const introExtraMsg = document.getElementById("introExtraMsg");
 
         const startButton = document.getElementById("startButton");
         const nextLevelButton = document.getElementById("nextLevelButton");
@@ -788,13 +872,14 @@
 
         // Game Parameters & State
         let gameState = "START";
+        let gameActive = false;
         let score = 0;
         let currentLevel = 1;
         let lives = 20; // Pool of chances starting with 20 for level 1
         let remainingBalloonsNeeded = 5;
         let levelIntroStartTime = 0;
         let bonusStartTime = 0;
-        const INTRO_DURATION = 2000; // exactly 2000ms
+        const INTRO_DURATION = 1500; // exactly 1500ms
 
         // Setup background procedural clouds
         let clouds = [
@@ -857,10 +942,10 @@
             const cycleMultiplier = 1 + (cycle - 1) * 0.15; // scales speed/weaving as they cycle through 10-level increments
 
             if (cycleLevel === 1) {
-                // Level 1: "Sunset Meadows" (Slow, learning pace)
+                // Level 1: "Warm-Up Round" (Noticeably slow, gentle pace for orientation)
                 return {
-                    name: "Sunset Meadows",
-                    subtitle: "Slow, relaxed balloon flow to practice your aim.",
+                    name: "Warm-Up Round",
+                    subtitle: "Noticeably slow, gentle pace for orientation",
                     spawnInterval: 90,
                     target: 5 + (cycle - 1) * 3,
                     isChallenge: false,
@@ -874,11 +959,11 @@
                     })
                 };
             } else if (cycleLevel === 2 || cycleLevel === 3) {
-                // Level 2 & 3: "Twilight Valley" (Moderate speed, introducing weaving)
+                // Level 2 & 3: "Twilight Valley" (Moderate speed with light horizontal weaving)
                 const step = cycleLevel === 2 ? 1 : 2;
                 return {
                     name: "Twilight Valley",
-                    subtitle: "Moderate speed with light weaving ocean breezes.",
+                    subtitle: "Moderate speed with light horizontal weaving",
                     spawnInterval: Math.max(50, 80 - step * 10),
                     target: 6 + step * 2 + (cycle - 1) * 3,
                     isChallenge: false,
@@ -895,7 +980,7 @@
                 // Level 4: "Challenge: Crimson Skies" (Pop only 6 Red balloons; wrong colors cost a life)
                 return {
                     name: "Challenge: Crimson Skies",
-                    subtitle: "CRITICAL: Pop ONLY Crimson (Red) balloons! Other colors cost a life.",
+                    subtitle: "Pop only 6 Red balloons; hitting other colors costs a life",
                     spawnInterval: 65,
                     target: 6, // Pop only 6 Red balloons
                     isChallenge: true,
@@ -914,7 +999,7 @@
                 // Level 5: "Bonus: Golden Harvest" (15-second timed frenzy, unlimited arrows)
                 return {
                     name: "Bonus: Golden Harvest",
-                    subtitle: "FRENZY! Rapid gold balloons. Score as much as possible in 15s!",
+                    subtitle: "15-second timed frenzy, unlimited arrows",
                     spawnInterval: 14,
                     target: 999,
                     isChallenge: false,
@@ -929,11 +1014,11 @@
                     })
                 };
             } else if (cycleLevel === 6 || cycleLevel === 7) {
-                // Level 6 & 7: "Midnight Summit" (Fast, weaving clusters)
+                // Level 6 & 7: "Midnight Summit" (Fast speed, weaving balloon clusters)
                 const step = cycleLevel === 6 ? 1 : 2;
                 return {
                     name: "Midnight Summit",
-                    subtitle: "Fast rising balloons floating through weaving drafts.",
+                    subtitle: "Fast speed, weaving balloon clusters",
                     spawnInterval: Math.max(30, 45 - step * 5),
                     target: 10 + step * 3 + (cycle - 1) * 3,
                     isChallenge: false,
@@ -950,7 +1035,7 @@
                 // Level 8: "Challenge: Cobalt Eclipse" (Pop only 6 Blue balloons; wrong colors cost a life)
                 return {
                     name: "Challenge: Cobalt Eclipse",
-                    subtitle: "CRITICAL: Pop ONLY Cobalt (Blue) balloons! Other colors cost a life.",
+                    subtitle: "Pop only 6 Blue balloons; hitting other colors costs a life",
                     spawnInterval: 60,
                     target: 6, // Pop only 6 Blue balloons
                     isChallenge: true,
@@ -969,7 +1054,7 @@
                 // Level 9: "Nebula Drift" (Erratic precision movement)
                 return {
                     name: "Nebula Drift",
-                    subtitle: "Dense, erratic balloons that shift direction unexpectedly.",
+                    subtitle: "Erratic precision movement",
                     spawnInterval: 32,
                     target: 15 + (cycle - 1) * 3,
                     isChallenge: false,
@@ -983,10 +1068,10 @@
                     })
                 };
             } else { // cycleLevel === 10
-                // Level 10: "Bonus: Supernova" (Final high-speed timed frenzy)
+                // Level 10: "Bonus: Supernova" (High-speed final timed frenzy)
                 return {
                     name: "Bonus: Supernova",
-                    subtitle: "SUPERNOVA FRENZY! Double speed bonus actions. Unlimited arrows!",
+                    subtitle: "High-speed final timed frenzy",
                     spawnInterval: 12, // extremely fast
                     target: 999,
                     isChallenge: false,
@@ -999,6 +1084,55 @@
                         waveFrequency: 0.012,
                         waveOffset: Math.random() * Math.PI * 2
                     })
+                };
+            }
+        }
+
+        // Generate clean splash text exactly matching the prompt requirements
+        function getSplashTexts(level) {
+            const cycleLevel = ((level - 1) % 10) + 1;
+            const cycle = Math.floor((level - 1) / 10) + 1;
+            const displayLevelNum = level;
+
+            if (cycleLevel === 1) {
+                return {
+                    title: `Level ${displayLevelNum}: Warm-Up Round`,
+                    subtitle: "Noticeably slow, gentle pace for orientation"
+                };
+            } else if (cycleLevel === 2 || cycleLevel === 3) {
+                return {
+                    title: `Level ${displayLevelNum}: Twilight Valley`,
+                    subtitle: "Moderate speed with light horizontal weaving"
+                };
+            } else if (cycleLevel === 4) {
+                return {
+                    title: `Level ${displayLevelNum} Challenge: Crimson Skies`,
+                    subtitle: "Pop only 6 Red balloons; hitting other colors costs a life"
+                };
+            } else if (cycleLevel === 5) {
+                return {
+                    title: `Level ${displayLevelNum} Bonus: Golden Harvest`,
+                    subtitle: "15-second timed frenzy, unlimited arrows"
+                };
+            } else if (cycleLevel === 6 || cycleLevel === 7) {
+                return {
+                    title: `Level ${displayLevelNum}: Midnight Summit`,
+                    subtitle: "Fast speed, weaving balloon clusters"
+                };
+            } else if (cycleLevel === 8) {
+                return {
+                    title: `Level ${displayLevelNum} Challenge: Cobalt Eclipse`,
+                    subtitle: "Pop only 6 Blue balloons; hitting other colors costs a life"
+                };
+            } else if (cycleLevel === 9) {
+                return {
+                    title: `Level ${displayLevelNum}: Nebula Drift`,
+                    subtitle: "Erratic precision movement"
+                };
+            } else { // cycleLevel === 10
+                return {
+                    title: `Level ${displayLevelNum} Bonus: Supernova`,
+                    subtitle: "High-speed final timed frenzy"
                 };
             }
         }
@@ -1173,53 +1307,110 @@
             startGame();
         });
 
-        // Initialize state of the Game
-        function startGame() {
+        // Setup strict fail-proof Level Intro transitions
+        function triggerLevelIntro() {
+            if (window.introTimeout) {
+                clearTimeout(window.introTimeout);
+            }
+
             gameState = "LEVEL_INTRO";
+            gameActive = false;
             levelIntroStartTime = Date.now();
             bonusStartTime = 0;
-            score = 0;
-            currentLevel = 1;
-            lives = getMaxChances(1);
+
+            const arch = getLevelArchetype(currentLevel);
+            remainingBalloonsNeeded = arch.target;
+            balloonSpawnInterval = arch.spawnInterval;
+            balloonSpawnTimer = 0;
+
             arrows = [];
             balloons = [];
             particles = [];
             floatingTexts = [];
+
+            // Populate the DOM overlay screen
+            const splashTxt = getSplashTexts(currentLevel);
+            introTitle.innerText = splashTxt.title;
+            introSubtitle.innerText = splashTxt.subtitle;
+
+            // Accent theme colors per archetype rules
+            let themeColor = "#fbbf24"; // default gold
+            if (arch.isBonus) {
+                themeColor = "#f59e0b"; // Golden glow for bonus
+            } else if (arch.isChallenge) {
+                themeColor = arch.challengeTargetColor; // Red or Blue glow matching color
+            } else if (currentLevel > 3 && currentLevel <= 7) {
+                themeColor = "#ec4899"; // Twilight pink
+            } else if (currentLevel > 7) {
+                themeColor = "#38bdf8"; // Midnight blue/cyan
+            }
+
+            introTitle.style.textShadow = `0 4px 16px ${themeColor}`;
+            introDivider.style.backgroundColor = themeColor;
+            introDivider.style.boxShadow = `0 0 15px ${themeColor}`;
+
+            // Helper secondary tips
+            if (arch.isChallenge) {
+                introExtraMsg.innerHTML = `<span style="color: #f87171; font-weight: 800;">CRITICAL Challenge:</span> Pop ONLY ${arch.challengeTargetColorName} balloons! Hitting other colors costs -1 Chance!`;
+            } else if (arch.isBonus) {
+                introExtraMsg.innerHTML = `<span style="color: #67e8f9; font-weight: 800;">FRENZY:</span> Unleash hell! Unlimited arrows for 15 seconds!`;
+            } else {
+                introExtraMsg.innerHTML = `Aim carefully by dragging, and pop ${arch.target} balloons.`;
+                introExtraMsg.style.color = "rgba(255, 255, 255, 0.65)";
+            }
+
+            levelIntroScreen.style.background = `radial-gradient(circle at 50% 50%, ${themeColor}22 0%, #0c0f17 100%)`;
             
-            const arch = getLevelArchetype(1);
-            remainingBalloonsNeeded = arch.target;
-            balloonSpawnInterval = arch.spawnInterval;
-            balloonSpawnTimer = 0;
+            // Explicitly show Level Intro HTML card
+            levelIntroScreen.style.display = "flex";
+            levelIntroScreen.classList.remove("hidden");
+
+            updateHUD();
+
+            // Fail-Proof 1.5-Second Transition Timer (Strict Logic)
+            window.introTimeout = setTimeout(() => {
+                // The moment setTimeout hits 1500ms, explicitly hide/display none / opacity 0
+                levelIntroScreen.style.display = "none";
+                levelIntroScreen.classList.add("hidden");
+
+                // Flip game state and triggers
+                gameState = "PLAYING";
+                gameActive = true;
+                balloonSpawnTimer = 0;
+
+                if (arch.isBonus) {
+                    bonusStartTime = Date.now();
+                }
+
+                // Force pusher to spawn very first balloon instantly on frame 1 so the sky is never empty!
+                balloons = [];
+                spawnBalloon();
+
+                updateHUD();
+            }, 1500);
+        }
+
+        // Initialize state of the Game
+        function startGame() {
+            score = 0;
+            currentLevel = 1;
+            lives = getMaxChances(1);
 
             startScreen.classList.add("hidden");
             clearedScreen.classList.add("hidden");
             gameOverScreen.classList.add("hidden");
             hudBar.classList.remove("hidden");
 
-            updateHUD();
+            triggerLevelIntro();
         }
 
         function advanceNextLevel() {
-            gameState = "LEVEL_INTRO";
-            levelIntroStartTime = Date.now();
-            bonusStartTime = 0;
             currentLevel++;
-            
             lives = getMaxChances(currentLevel);
-
-            const arch = getLevelArchetype(currentLevel);
-            remainingBalloonsNeeded = arch.target;
-            balloonSpawnInterval = arch.spawnInterval;
-
-            arrows = [];
-            balloons = [];
-            particles = [];
-            floatingTexts = [];
-            balloonSpawnTimer = 0;
 
             clearedScreen.classList.add("hidden");
 
-            updateHUD();
+            triggerLevelIntro();
         }
 
         function handleLevelClear() {
@@ -1299,19 +1490,8 @@
                 }
             }
 
-            // LEVEL_INTRO ticks transitions here
+            // LEVEL_INTRO transitions are handled with rigid setTimeout
             if (gameState === "LEVEL_INTRO") {
-                const elapsed = Date.now() - levelIntroStartTime;
-                if (elapsed >= INTRO_DURATION) {
-                    gameState = "PLAYING";
-                    balloonSpawnTimer = 0;
-                    const arch = getLevelArchetype(currentLevel);
-                    if (arch.isBonus) {
-                        bonusStartTime = Date.now();
-                    }
-                    spawnBalloon(); // Instantly begin spawning
-                    updateHUD();
-                }
                 return; // Pause normal gameplay updates
             }
 
@@ -1970,8 +2150,8 @@
 
             const elapsed = Date.now() - levelIntroStartTime;
             let opacity = 1;
-            if (elapsed > 1500) {
-                opacity = Math.max(0, 1 - (elapsed - 1500) / 500);
+            if (elapsed > 1100) {
+                opacity = Math.max(0, 1 - (elapsed - 1100) / 400);
             }
 
             ctx.save();
@@ -2010,48 +2190,35 @@
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 4;
 
-            ctx.fillStyle = themeColor;
-            ctx.font = "900 54px 'Space Grotesk', system-ui, sans-serif";
-            ctx.fillText(`LEVEL ${currentLevel}`, 400, 200);
+            const splash = getSplashTexts(currentLevel);
 
-            // 4. Level theme name or special mode banner
-            ctx.fillStyle = "#ffffff";
-            if (arch.isBonus) {
-                ctx.font = "900 32px 'Space Grotesk', system-ui, sans-serif";
-                ctx.fillStyle = "#facc15"; // bright gold
-                ctx.fillText("BONUS ROUND: POP EVERYTHING!", 400, 275);
-            } else if (arch.isChallenge) {
-                ctx.font = "900 28px 'Space Grotesk', system-ui, sans-serif";
-                ctx.fillStyle = themeColor; // Red or Blue
-                ctx.fillText(`CHALLENGE: POP ONLY ${arch.challengeTargetColorName} BALLOONS!`, 400, 275);
-            } else {
-                ctx.font = "700 28px 'Plus Jakarta Sans', system-ui, sans-serif";
-                ctx.fillText(arch.name, 400, 275);
-            }
+            ctx.fillStyle = themeColor;
+            ctx.font = "900 42px 'Space Grotesk', system-ui, sans-serif";
+            ctx.fillText(splash.title, 400, 240);
 
             // 5. Center separator line
             ctx.beginPath();
             ctx.lineWidth = 4;
             ctx.lineCap = "round";
             ctx.strokeStyle = themeColor;
-            ctx.moveTo(320, 325);
-            ctx.lineTo(480, 325);
+            ctx.moveTo(320, 310);
+            ctx.lineTo(480, 310);
             ctx.stroke();
 
             // 6. Mechanics/Archetype description
             ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-            ctx.font = "600 15px 'Plus Jakarta Sans', system-ui, sans-serif";
-            ctx.fillText(arch.subtitle, 400, 360);
+            ctx.font = "600 16px 'Plus Jakarta Sans', system-ui, sans-serif";
+            ctx.fillText(splash.subtitle, 400, 350);
 
             // Added details for challenge / bonus constraints
             if (arch.isChallenge) {
                 ctx.fillStyle = "#f87171"; // soft red
                 ctx.font = "bold 13px 'Plus Jakarta Sans', system-ui, sans-serif";
-                ctx.fillText("Note: Popping wrong colors will cost you -1 Chance!", 400, 395);
+                ctx.fillText("Note: Popping wrong colors will cost you -1 Chance!", 400, 390);
             } else if (arch.isBonus) {
                 ctx.fillStyle = "#67e8f9"; // cyan/bright
                 ctx.font = "bold 13px 'Plus Jakarta Sans', system-ui, sans-serif";
-                ctx.fillText("Note: Unleash hell! Arrows are completely infinite!", 400, 395);
+                ctx.fillText("Note: Unleash hell! Arrows are completely infinite!", 400, 390);
             }
 
             // 7. GET READY... indicator at the bottom
