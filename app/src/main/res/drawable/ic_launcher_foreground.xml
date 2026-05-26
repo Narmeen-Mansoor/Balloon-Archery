@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Red Balloon Body -->
+    <path
+        android:fillColor="#FF5964"
+        android:pathData="M54,28 C64,28 72,36 72,48 C72,60 64,68 54,68 C44,68 36,60 36,48 C36,36 44,28 54,28 Z"/>
+    
+    <!-- Balloon Knot -->
+    <path
+        android:fillColor="#FF5964"
+        android:pathData="M54,68 L50,73 L58,73 Z"/>
+    
+    <!-- Balloon String -->
+    <path
+        android:strokeColor="#A0AEC0"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,73 C53,78 56,82 54,88"/>
+    
+    <!-- Balloon Highlighting / Shine -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"
+        android:pathData="M45,39 C48,36 51,36 53,38 C51,40 48,40 46,42 Z"/>
+
+    <!-- Archery Arrow popping the balloon -->
+    <!-- Gold Arrow Shaft -->
+    <path
+        android:strokeColor="#FFE882"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:pathData="M32,71 L63,40" />
+
+    <!-- Gold Arrow Head -->
+    <path
+        android:fillColor="#FFE882"
+        android:pathData="M63,40 L63,47 L70,40 L63,33 Z" />
+
+    <!-- Red Fletching Feathers -->
+    <path
+        android:fillColor="#FF5964"
+        android:pathData="M32,71 L24,73 L27,67 Z M32,71 L34,79 L28,76 Z" />
+</vector>

@@ -1,0 +1,6 @@
+{
+  "name": "Balloon Archery",
+  "description": "An interactive, satisfying Balloon Archery game using HTML5 Canvas. Rotate your bow, fire arrows, pop rising balloons, and conquer increasingly challenging levels with physics-informed particle collisions and synthesised audio effects.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
