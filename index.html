@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Balloon Archery</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700;900&display=swap');
@@ -37,11 +37,14 @@
             overflow: hidden;
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             color: var(--text-color);
+            margin: 0;
+            padding: 0;
         }
 
         .game-container {
             position: relative;
-            width: 95vw;
+            width: 100%;
+            height: 100%;
             max-width: 800px;
             aspect-ratio: 800 / 600;
             display: flex;
@@ -52,11 +55,27 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
             border: 4px solid #1e293b; /* border-slate-800 */
             background-color: #020617;
+            box-sizing: border-box;
+        }
+
+        /* Mobile full-screen responsive viewports */
+        @media (max-width: 800px) or (max-height: 600px) {
+            .game-container {
+                width: 100vw;
+                height: 100vh;
+                max-width: 100%;
+                max-height: 100%;
+                aspect-ratio: auto;
+                border: none;
+                border-radius: 0;
+            }
         }
 
         canvas {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 800 / 600;
+            object-fit: contain;
             display: block;
             background: linear-gradient(to bottom, #1e0b36, #0c021a);
             cursor: crosshair;
@@ -170,23 +189,60 @@
         .target-val { color: #FFF; }
         .lives-val { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
 
+        /* Responsive styling for compact screens */
+        @media (max-width: 600px) {
+            .hud-bar {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                gap: 6px;
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+
+            .hud-item {
+                padding: 4px 10px;
+                gap: 4px;
+            }
+
+            .hud-label {
+                font-size: 8px;
+                letter-spacing: 0.5px;
+            }
+
+            .hud-value {
+                font-size: 11px;
+            }
+
+            .hud-item:nth-child(1) .hud-value {
+                font-size: 16px;
+            }
+        }
+
         /* General Overlay UI Screens */
         .overlay {
             position: absolute;
             inset: 0;
-            background: rgba(2, 6, 23, 0.94);
+            background: linear-gradient(to bottom, #020617 0%, #0f172a 100%);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between; /* Spacing out header, middle instructions, bottom buttons */
             align-items: center;
-            padding: 40px;
+            padding: 32px 24px;
             text-align: center;
             z-index: 20;
             transition: opacity 0.4s ease, visibility 0.4s;
             opacity: 1;
             visibility: visible;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        #startScreen {
+            background: linear-gradient(180deg, #0284c7 0%, #38bdf8 55%, #bae6fd 85%, #fef08a 100%);
+            color: #0f172a;
         }
 
         .overlay.hidden {
@@ -195,148 +251,207 @@
             pointer-events: none;
         }
 
-        .overlay h1 {
+        .overlay-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+        }
+
+        #startScreen h1 {
             font-family: 'Space Grotesk', system-ui, sans-serif;
-            font-size: 48px;
+            font-size: clamp(26px, 6vw, 44px);
             font-weight: 950;
-            margin-bottom: 12px;
-            letter-spacing: -1.5px;
-            background: linear-gradient(135deg, #FFF 30%, #a8c0ff 100%);
+            margin-bottom: 6px;
+            letter-spacing: -1.2px;
+            background: linear-gradient(135deg, #075985 0%, #0369a1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+            margin: 0;
+        }
+
+        #startScreen .subtitle {
+            font-size: clamp(12px, 3.2vw, 15px);
+            color: #1e293b;
+            max-width: 480px;
+            line-height: 1.4;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .overlay.game-over {
+            background: linear-gradient(to bottom, #111827 0%, #030008 100%);
         }
 
         .overlay.game-over h1 {
             background: linear-gradient(135deg, #FF7B84 30%, #f43f5e 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-size: clamp(28px, 6vw, 44px);
+            font-weight: 950;
+            letter-spacing: -1.5px;
+            text-shadow: 0 4px 10px rgba(244, 63, 94, 0.2);
+        }
+
+        .overlay.level-cleared {
+            background: linear-gradient(to bottom, #064e3b 0%, #022c22 100%);
         }
 
         .overlay.level-cleared h1 {
             background: linear-gradient(135deg, #34d399 30%, #059669 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-size: clamp(28px, 6vw, 44px);
+            font-weight: 950;
+            letter-spacing: -1.5px;
+            text-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);
         }
 
-        .subtitle {
-            font-size: 15px;
-            color: #94a3b8; /* text-slate-400 */
-            margin-bottom: 28px;
+        .subtitle-cleared, .subtitle-gameover {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 20px;
             max-width: 500px;
-            line-height: 1.6;
+            line-height: 1.5;
             font-weight: 500;
         }
 
         .instructions-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px; /* rounded-2xl */
-            padding: 24px;
-            margin-bottom: 32px;
-            max-width: 480px;
+            background: rgba(255, 255, 255, 0.55);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            padding: 14px 18px;
+            margin: 8px 0;
+            width: 100%;
+            max-width: 460px;
             text-align: left;
+            box-sizing: border-box;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
         }
 
         .instructions-card h2 {
             font-family: 'Space Grotesk', system-ui, sans-serif;
-            font-size: 14px;
-            letter-spacing: 1.5px;
-            color: #38bdf8; /* text-sky-450 */
-            margin-bottom: 12px;
+            font-size: clamp(12px, 3.5vw, 14px);
+            letter-spacing: 1.2px;
+            color: #0369a1;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            font-weight: 700;
+            font-weight: 800;
+            text-align: center;
         }
 
         .instructions-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            font-size: 13.5px;
-            color: #cbd5e1; /* text-slate-300 */
+            gap: 6px;
+            font-size: clamp(11px, 3.1vw, 13px);
+            color: #0f172a;
         }
 
         .instructions-list li {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            line-height: 1.5;
+            gap: 8px;
+            line-height: 1.35;
+            font-weight: 600;
         }
 
         .instructions-list li::before {
             content: "✦";
-            color: var(--accent);
+            color: #e11d48;
             font-weight: bold;
+            flex-shrink: 0;
         }
 
         .score-summary {
-            font-size: 20px;
-            color: #94a3b8;
-            margin-bottom: 24px;
-            font-weight: 500;
+            font-size: 18px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            font-weight: 600;
         }
 
         .score-summary .score-big {
             font-family: 'Space Grotesk', system-ui, sans-serif;
-            font-size: 40px;
+            font-size: clamp(32px, 7vw, 44px);
             font-weight: 900;
-            color: var(--accent);
+            color: #fbbf24;
             display: block;
-            margin-top: 8px;
-            text-shadow: 0 0 15px var(--accent-glow);
+            margin-top: 4px;
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
         }
 
-        /* Modern interactive button */
+        /* Modern interactive buttons */
         .btn {
-            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); /* Amber-500 to Amber-700 */
-            color: #020617; /* Slate-950 text */
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            color: #020617;
             border: none;
-            padding: 14px 40px;
+            padding: 12px 32px;
             font-family: 'Space Grotesk', system-ui, sans-serif;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 900;
-            border-radius: 16px; /* rounded-2xl */
+            border-radius: 16px;
             cursor: pointer;
             outline: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            text-decoration: none;
+            width: auto;
+            min-height: 48px;
+        }
+
+        .btn-orange {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            padding: 16px 44px;
+            font-size: clamp(15px, 4.2vw, 18px);
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            animation: pulse-button 2s infinite ease-in-out;
+            width: 80%;
+            max-width: 320px;
+            margin-bottom: 8px;
+        }
+
+        @keyframes pulse-button {
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35); }
+            50% { transform: scale(1.04); box-shadow: 0 12px 32px rgba(249, 115, 22, 0.5); }
         }
 
         .btn:hover {
             transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 12px 28px rgba(245, 158, 11, 0.55);
-            filter: brightness(1.15);
+            filter: brightness(1.1);
         }
 
         .btn:active {
             transform: translateY(1px) scale(0.98);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
         .btn-red {
-            background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); /* Rose-500 to Rose-700 */
+            background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
             color: white;
             box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
-        }
-
-        .btn-red:hover {
-            box-shadow: 0 12px 28px rgba(244, 63, 94, 0.55);
+            padding: 14px 40px;
+            font-size: 16px;
+            border-radius: 16px;
         }
 
         .btn-green {
-            background: linear-gradient(135deg, #10b981 0%, #047857 100%); /* Emerald-500 to Emerald-700 */
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
             color: white;
             box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
-        }
-
-        .btn-green:hover {
-            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.55);
+            padding: 14px 40px;
+            font-size: 16px;
+            border-radius: 16px;
         }
     </style>
 </head>
@@ -358,8 +473,8 @@
                 <span id="targetText" class="hud-value target-val">5</span>
             </div>
             <div class="hud-item">
-                <span class="hud-label">LIVES</span>
-                <span id="livesText" class="hud-value lives-val">❤❤❤</span>
+                <span class="hud-label">CHANCES</span>
+                <span id="livesText" class="hud-value lives-val">❤ 20 / 20</span>
             </div>
         </div>
 
@@ -369,39 +484,52 @@
         <!-- Screens Overlays -->
         <!-- Start Screen -->
         <div id="startScreen" class="overlay">
-            <h1>Balloon Archery</h1>
-            <p class="subtitle">An physics-inspired archery challenge. Release arrows, clear balloons, and climb the ranks.</p>
+            <div class="overlay-header">
+                <h1>Balloon Archery</h1>
+                <p class="subtitle">A physics-inspired archery challenge. Release arrows, clear balloons, and climb the ranks.</p>
+            </div>
+            
             <div class="instructions-card">
                 <h2>How to Play:</h2>
                 <ul class="instructions-list">
-                    <li>Rotate your bow organically by shifting your mouse pointer.</li>
-                    <li>Left-click / Tap the screen to shoot an arrow along that calculated path.</li>
-                    <li>Vibrant balloons will float upwards. Burst them to level up!</li>
-                    <li>Avoid missing entirely or letting balloons float off the screen—both will deduct 1 life!</li>
+                    <li>Tap & Drag anywhere on screen to organically aim the bow.</li>
+                    <li>Release touch (or a quick tap) to fire your arrow!</li>
+                    <li>Only WASTED arrows cost a chance. Missed balloons are FREE.</li>
+                    <li>Balloon speeds vary by level—fast & tricky!</li>
+                    <li>Clear the targets to level up. Clear all levels to WIN!</li>
                 </ul>
             </div>
-            <button id="startButton" class="btn">Start Game 🏹</button>
+            
+            <button id="startButton" class="btn btn-orange">Start Game 🏹</button>
         </div>
 
         <!-- Level Cleared Screen -->
         <div id="clearedScreen" class="overlay level-cleared hidden">
-            <h1 id="clearedTitle">Level 1 Complete!</h1>
-            <p class="subtitle">Stunning archery! The balloons are picking up speed and moving erratically.</p>
+            <div class="overlay-header">
+                <h1 id="clearedTitle">Level 1 Complete!</h1>
+                <p class="subtitle-cleared">Stunning archery! The balloons are picking up speed and moving erratically.</p>
+            </div>
+            
             <div class="score-summary">
                 Current Score
                 <span id="clearedScore" class="score-big">120</span>
             </div>
+            
             <button id="nextLevelButton" class="btn btn-green">Next Level ➔</button>
         </div>
 
         <!-- Game Over Screen -->
         <div id="gameOverScreen" class="overlay game-over hidden">
-            <h1>Game Over</h1>
-            <p class="subtitle">You fought Valiantly, but the balloons got the better of you.</p>
+            <div class="overlay-header">
+                <h1>Game Over</h1>
+                <p class="subtitle-gameover">You fought valiantly, but the balloons got the better of you.</p>
+            </div>
+            
             <div class="score-summary">
                 Final Score
                 <span id="finalScore" class="score-big">350</span>
             </div>
+            
             <button id="restartButton" class="btn btn-red">Try Again ⟳</button>
         </div>
     </div>
@@ -419,6 +547,7 @@
             }
         }
 
+        // Sound effects
         function playPopSound() {
             if (!audioCtx) return;
             try {
@@ -899,14 +1028,15 @@
             clearedScore.innerText = score;
             clearedScreen.classList.remove("hidden");
 
-            // Spawn a beautiful massive celebratory confetti burst!
+            // Spawn a beautiful massive celebratory confetti burst! Criss-cross dual launcher canons.
             const confettiColors = ["#f43f5e", "#0ea5e9", "#10b981", "#fbbf24", "#f97316", "#a855f7", "#ec4899", "#22c55e", "#e11d48"];
-            for (let i = 0; i < 120; i++) {
-                // Spawn evenly along the bottom area, launching upwards
-                const px = Math.random() * 800;
-                const py = 620 + Math.random() * 50;
-                const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.95; // angled upwards
-                const speed = 7 + Math.random() * 9;
+            for (let i = 0; i < 200; i++) {
+                // Launch from left bottom corner and right bottom corner
+                const px = i % 2 === 0 ? 20 : 780;
+                const py = 610;
+                const baseAngle = i % 2 === 0 ? -Math.PI / 4 : -Math.PI * 3 / 4;
+                const angle = baseAngle + (Math.random() - 0.5) * 0.6; // angled upwards towards center
+                const speed = 11 + Math.random() * 11; // super energetic launching blast
                 
                 particles.push({
                     x: px,
@@ -916,10 +1046,10 @@
                     color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
                     radius: 3 + Math.random() * 5.5,
                     opacity: 1,
-                    decay: 0.005 + Math.random() * 0.006, // slow fadeout for high visibility
-                    isConfetti: true, // we render them as spinning rectangles for realism!
+                    decay: 0.003 + Math.random() * 0.004, // slower, long-lasting drift for extra celebration
+                    isConfetti: true,
                     rotation: Math.random() * Math.PI * 2,
-                    rotationSpeed: (Math.random() - 0.5) * 0.15
+                    rotationSpeed: (Math.random() - 0.5) * 0.25
                 });
             }
         }
@@ -931,6 +1061,7 @@
             gameOverScreen.classList.remove("hidden");
         }
 
+        // Live updater for the head up tracker interface
         function updateHUD() {
             scoreText.innerText = score;
             levelText.innerText = currentLevel;
@@ -954,14 +1085,14 @@
             if (gameState !== "PLAYING" && gameState !== "LEVEL_CLEARED") return;
 
             // Handle continuous celebratory confetti showers during level clear
-            if (gameState === "LEVEL_CLEARED" && Math.random() < 0.12) {
+            if (gameState === "LEVEL_CLEARED" && Math.random() < 0.16) {
                 const confettiColors = ["#f43f5e", "#0ea5e9", "#10b981", "#fbbf24", "#f97316", "#a855f7", "#ec4899"];
                 // Left launcher
                 particles.push({
                     x: 10,
                     y: 600,
-                    vx: 4 + Math.random() * 6,
-                    vy: -(8 + Math.random() * 8),
+                    vx: 5 + Math.random() * 6,
+                    vy: -(9 + Math.random() * 8),
                     color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
                     radius: 3 + Math.random() * 4.5,
                     opacity: 1,
@@ -974,8 +1105,8 @@
                 particles.push({
                     x: 790,
                     y: 600,
-                    vx: -(4 + Math.random() * 6),
-                    vy: -(8 + Math.random() * 8),
+                    vx: -(5 + Math.random() * 6),
+                    vy: -(9 + Math.random() * 8),
                     color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
                     radius: 3 + Math.random() * 4.5,
                     opacity: 1,
@@ -1112,29 +1243,29 @@
             const skyGrad = ctx.createLinearGradient(0, 0, 0, 600);
             
             if (currentLevel === 1) {
-                // Majestic Sunset Sky
-                skyGrad.addColorStop(0, '#110F20');
-                skyGrad.addColorStop(0.5, '#3b1259');
-                skyGrad.addColorStop(0.8, '#701e54');
-                skyGrad.addColorStop(1, '#cb5030');
+                // Vibrant Sunny Day
+                skyGrad.addColorStop(0, '#0284c7'); // sky-600
+                skyGrad.addColorStop(0.5, '#38bdf8'); // sky-450
+                skyGrad.addColorStop(0.85, '#bae6fd'); // sky-200
+                skyGrad.addColorStop(1, '#fef08a'); // golden warm horizon yellow
             } else if (currentLevel % 3 === 0) {
-                // Neon Twilight Horizon
-                skyGrad.addColorStop(0, '#090514');
-                skyGrad.addColorStop(0.4, '#1b0c36');
-                skyGrad.addColorStop(0.84, '#50165c');
-                skyGrad.addColorStop(1, '#ec4899');
+                // Vivid Sunset Skylines
+                skyGrad.addColorStop(0, '#1e1b4b'); // deep indigo
+                skyGrad.addColorStop(0.4, '#4c1d95'); // royal purple
+                skyGrad.addColorStop(0.75, '#be185d'); // magenta pink
+                skyGrad.addColorStop(1, '#ffedd5'); // peach orange glow
             } else if (currentLevel % 3 === 1) {
-                // Rich Amber Aurora
-                skyGrad.addColorStop(0, '#020205');
-                skyGrad.addColorStop(0.42, '#0c173a');
-                skyGrad.addColorStop(0.88, '#1d5e68');
-                skyGrad.addColorStop(1, '#10b981');
+                // Rich Teal Horizon
+                skyGrad.addColorStop(0, '#0f172a'); // midnight slate
+                skyGrad.addColorStop(0.42, '#0d9488'); // teal-600
+                skyGrad.addColorStop(0.8, '#4fd1c5'); // teal-400
+                skyGrad.addColorStop(1, '#f0fdfa'); // mint teal
             } else {
                 // Midnight Cosmic Sky
                 skyGrad.addColorStop(0, '#030008');
                 skyGrad.addColorStop(0.5, '#0c071d');
-                skyGrad.addColorStop(0.85, '#1e0c38');
-                skyGrad.addColorStop(1, '#4f1454');
+                skyGrad.addColorStop(0.8, '#4f1454');
+                skyGrad.addColorStop(1, '#f472b6'); // pink neon aura
             }
             
             ctx.fillStyle = skyGrad;
@@ -1159,7 +1290,7 @@
             }
 
             // Draw landscape decor peaks (mountains) of soft backgrounds
-            ctx.fillStyle = "rgba(255, 255, 255, 0.02)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.035)";
             ctx.beginPath();
             ctx.moveTo(0, 600);
             ctx.lineTo(250, 420);
@@ -1327,18 +1458,20 @@
             balloons.forEach(b => {
                 ctx.save();
                 
-                // 1. Drawing hanging curved wiggling animated strings
+                // 1. Drawing hanging curved wiggling dragging strings
                 ctx.beginPath();
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
-                ctx.lineWidth = 1.3;
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.lineWidth = 1.2;
                 
-                // Calculate dynamic time-based sway sine motion
-                const swayOffset = Math.sin((Date.now() * 0.006) + b.x) * 4.5;
+                // String sways back-and-forth dynamically, lagged by the sinusoidal weaving
+                const horizontalWeave = (currentLevel >= 2) ? Math.sin((b.y * b.waveFrequency) + b.waveOffset) * b.waveAmplitude : 0;
+                const dynamicSway = Math.sin(Date.now() * 0.007 + b.x) * 5 - (horizontalWeave * 0.18);
+                
                 ctx.moveTo(b.x, b.y + b.radius * 1.25);
                 ctx.bezierCurveTo(
-                    b.x - 6 + swayOffset, b.y + b.radius * 1.25 + 10,
-                    b.x + 6 - swayOffset, b.y + b.radius * 1.25 + 20,
-                    b.x - 2 + swayOffset * 0.5, b.y + b.radius * 1.25 + 32
+                    b.x - 6 + dynamicSway, b.y + b.radius * 1.25 + 10,
+                    b.x + 6 - dynamicSway, b.y + b.radius * 1.25 + 20,
+                    b.x - 2 + dynamicSway * 0.5, b.y + b.radius * 1.25 + 34
                 );
                 ctx.stroke();
 
@@ -1354,22 +1487,28 @@
                     -b.radius * 0.35, -b.radius * 0.35, b.radius * 0.1,
                     0, 0, b.radius
                 );
-                gradient.addColorStop(0, "#FFFFFF"); // white spot reflection
+                gradient.addColorStop(0, "#FFFFFF"); // white light source reflection
                 gradient.addColorStop(0.25, b.color);
                 gradient.addColorStop(1, darkenColor(b.color, 42));
 
                 ctx.fillStyle = gradient;
                 ctx.fill();
 
-                // 3. Realistic shiny gloss crescent overlay bubble effects
+                // 3. Realistic shiny gloss crescent overlay bubble effects (glare spot)
                 ctx.fillStyle = "rgba(255, 255, 255, 0.42)";
                 ctx.beginPath();
                 ctx.ellipse(-b.radius * 0.35, -b.radius * 0.35, b.radius * 0.22, b.radius * 0.14, Math.PI / 4, 0, Math.PI * 2);
                 ctx.fill();
 
+                // 4. Subtle ambient rim projection highlight from below
+                ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+                ctx.beginPath();
+                ctx.ellipse(b.radius * 0.35, b.radius * 0.35, b.radius * 0.25, b.radius * 0.12, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+
                 ctx.restore();
 
-                // 4. Small polygon tie knot at bottom lip
+                // 5. Small polygon tie knot at bottom lip
                 ctx.save();
                 ctx.translate(b.x, b.y + b.radius * 1.22);
                 ctx.beginPath();
@@ -1431,7 +1570,7 @@
             }
         }
 
-        // Draw an educational/guidance visual dotted targeting aim guide
+        // Draw an educational/guidance visual dotted dynamic targeting aim guide
         function drawAimGuide() {
             if (gameState !== "PLAYING") return;
             
@@ -1445,19 +1584,47 @@
             ctx.translate(bowX, bowY);
             ctx.rotate(targetAngle);
 
-            // Draw beautiful dotted line extending further
+            // Dynamic Targeting Length logic based on closest balloon to line of aiming
+            let currentTargetLength = 600; // max length
+            const dx = Math.cos(targetAngle);
+            const dy = Math.sin(targetAngle);
+            let closestDist = Infinity;
+
+            balloons.forEach(b => {
+                const vx = b.x - bowX;
+                const vy = b.y - bowY;
+                const proj = vx * dx + vy * dy; // Distance along alignment
+                
+                if (proj > 20) { // balloon is in front
+                    const perpDist = Math.abs(-vx * dy + vy * dx); // straight distance from target line of sight
+                    
+                    if (perpDist < b.radius + 35) { // alignment match margin
+                        // Distance to balloon boundary approximation
+                        const distToEdge = proj - Math.sqrt(Math.max(0, Math.pow(b.radius + 15, 2) - perpDist * perpDist));
+                        if (distToEdge < closestDist) {
+                            closestDist = distToEdge;
+                        }
+                    }
+                }
+            });
+
+            if (closestDist !== Infinity) {
+                currentTargetLength = Math.max(65, Math.min(600, closestDist));
+            }
+
+            // Draw beautiful glowing target guide line extending to computed targeting length
             ctx.beginPath();
-            ctx.strokeStyle = "rgba(251, 191, 36, 0.25)"; // glowing amber
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = "rgba(251, 191, 36, 0.3)"; // glowing amber guide
+            ctx.lineWidth = 1.8;
             ctx.setLineDash([4, 6]);
             ctx.moveTo(35, 0);
-            ctx.lineTo(280, 0); // moderate distance guide
+            ctx.lineTo(currentTargetLength, 0);
             ctx.stroke();
 
-            // Draw a subtle focus ring at the end
+            // Draw a shiny focus target ring at the exact boundary distance
             ctx.beginPath();
-            ctx.arc(280, 0, 4, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(251, 191, 36, 0.45)";
+            ctx.arc(currentTargetLength, 0, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(251, 191, 36, 0.65)";
             ctx.fill();
 
             ctx.restore();
@@ -1516,19 +1683,16 @@
 
         // Handle canvas auto-resizing with high DPI backing stores
         function resizeCanvas() {
-            const rect = canvas.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
-            
-            // Standard crisp high DPI configuration
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
+            // Establish crisp 800x600 logical bounds physical backing multiplier
+            canvas.width = 800 * dpr;
+            canvas.height = 600 * dpr;
         }
 
         // Main game cycle draw loop
         function mainLoop() {
             update();
 
-            const rect = canvas.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
 
             // Clear Screen on physical backing pixels
@@ -1536,7 +1700,7 @@
 
             // Scale coordination spaces dynamically mapping to 800x600 logical bounds
             ctx.save();
-            ctx.scale((rect.width * dpr) / 800, (rect.height * dpr) / 600);
+            ctx.scale(dpr, dpr);
 
             // Screen shakes
             if (screenShake > 0) {
